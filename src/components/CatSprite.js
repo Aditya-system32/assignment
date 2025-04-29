@@ -1,8 +1,52 @@
 import React from "react";
+import { useState, useEffect } from "react";
 
-export default function CatSprite() {
+export default function CatSprite({ script, run }) {
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [direction, setDirection] = useState(0);
+
+  const delay = (ms) => new Promise((res) => setTimeout(res, ms));
+
+  useEffect(() => {
+    const runScript = async () => {
+      for (const block of script) {
+        if (block.type === "move") {
+          const radians = (direction * Math.PI) / 180;
+          setPosition((prev) => ({
+            x: prev.x + Math.cos(radians) * block.value,
+            y: prev.y + Math.sin(radians) * block.value,
+          }));
+        } else if (block.type === "turn-right") {
+          setDirection((prev) => (prev + block.value) % 360);
+        } else if (block.type === "turn-left") {
+          setDirection((prev) => (prev - block.value + 360) % 360);
+        } else if (block.type === "goto") {
+          setPosition(block.value);
+        } else if (block.type === "say") {
+          // Display message
+          setSpeech(block.value);
+          await delay(block.duration * 1000); // Convert seconds to milliseconds
+        } else if (block.type === "think") {
+          // Display thinking bubble
+          setThinking(block.value);
+          await delay(block.duration * 1000); // Convert seconds to milliseconds
+        }
+        await delay(300);
+      }
+    };
+    if (run) {
+      runScript();
+    }
+  }, [run, script]);
+
   return (
     <svg
+      style={{
+        position: "relative",
+        left: position.x,
+        top: position.y,
+        transform: `rotate(${direction}deg)`,
+      }}
       xmlns="http://www.w3.org/2000/svg"
       width="95.17898101806641"
       height="100.04156036376953"
