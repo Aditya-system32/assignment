@@ -8,6 +8,7 @@ const blockSource = {
       type: props.type,
       value: component?.state?.inputValue || 0,
       duration: component?.state?.duration || 0,
+      subscript: props.subscript || [],
     };
   },
 };
@@ -16,8 +17,8 @@ class Block extends Component {
   constructor(props) {
     super(props);
     this.state = {
-        inputValue: props.initialValue || "Hello",
-        duration: props.duration || 2,
+      inputValue: props.initialValue || "Hello",
+      duration: props.duration || 2,
     };
   }
 
@@ -30,7 +31,7 @@ class Block extends Component {
   };
 
   handleChange = (e) => {
-    if(isNaN(e.target.value)) return;
+    if (isNaN(e.target.value)) return;
     this.setState({ inputValue: parseInt(e.target.value) || 0 });
   };
 
@@ -64,8 +65,7 @@ class Block extends Component {
 
         {type === "turn-left" && (
           <span>
-            Turn{" "}
-            {icon && <span className="inline-block mx-1">{icon}</span>}
+            Turn {icon && <span className="inline-block mx-1">{icon}</span>}
             <input
               type="text"
               value={inputValue}
@@ -78,8 +78,7 @@ class Block extends Component {
 
         {type === "turn-right" && (
           <span>
-            Turn{" "}
-            {icon && <span className="inline-block mx-1">{icon}</span>}
+            Turn {icon && <span className="inline-block mx-1">{icon}</span>}
             <input
               type="text"
               value={inputValue}
@@ -92,8 +91,7 @@ class Block extends Component {
 
         {type === "goto" && (
           <span>
-            Go to{" "}
-            {icon && <span className="inline-block mx-1">{icon}</span>} x:{" "}
+            Go to {icon && <span className="inline-block mx-1">{icon}</span>} x:{" "}
             <input
               type="text"
               value={inputValue.x || 0}
@@ -146,6 +144,18 @@ class Block extends Component {
               className="w-12 text-black px-1 rounded"
             />{" "}
             seconds
+          </span>
+        )}
+        {type === "repeat" && (
+          <span>
+            Repeat{" "}
+            <input
+              type="number"
+              value={inputValue}
+              onChange={this.handleChange}
+              className="w-12 text-black px-1 rounded"
+            />{" "}
+            times
           </span>
         )}
       </div>

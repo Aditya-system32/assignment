@@ -16,7 +16,20 @@ class ScriptArea extends React.Component {
 
   addBlock = (block) => {
     this.setState(
-      (prev) => ({ blocks: [...prev.blocks, block] }),
+      (prev) => {
+        const blocks = [...prev.blocks];
+
+        // Check if last block is repeat and is waiting for subBlocks
+        const lastBlock = blocks[blocks.length - 1];
+        if (lastBlock && lastBlock.type === "repeat") {
+          if (!lastBlock.subBlocks) lastBlock.subBlocks = [];
+          lastBlock.subBlocks.push(block);
+        } else {
+          blocks.push(block);
+        }
+
+        return { blocks };
+      },
       () => this.props.onScriptUpdate(this.state.blocks)
     );
   };
@@ -36,7 +49,6 @@ class ScriptArea extends React.Component {
             {typeof b.value === "object"
               ? `x:${b.value.x}, y:${b.value.y}`
               : b.value}
-        
           </div>
         ))}
       </div>
