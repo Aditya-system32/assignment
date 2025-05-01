@@ -55,27 +55,33 @@ class ScriptArea extends React.Component {
 
   addBlock = (block) => {
     if (!this.props.selectedSpriteId) return;
-  
+
     this.setState(
       (prev) => {
         const blocks = [...prev.blocks];
         const lastBlock = blocks[blocks.length - 1];
-  
-        // If the last block is a "repeat" block, add to its subBlocks
-        if (lastBlock && lastBlock.type === "repeat") {
+
+        // Only add to subBlocks if the last block is a "repeat" block and it is not the bottom-most block
+        if (
+          lastBlock &&
+          lastBlock.type === "repeat" &&
+          block.type !== "repeat-end"
+        ) {
           lastBlock.subBlocks.push(block);
         } else {
           blocks.push(block);
         }
-  
+
         return { blocks };
       },
       () => {
-        this.props.onScriptUpdate(this.state.blocks, this.props.selectedSpriteId);
+        this.props.onScriptUpdate(
+          this.state.blocks,
+          this.props.selectedSpriteId
+        );
       }
     );
   };
-
   removeBlock = (index) => {
     this.setState(
       (prev) => {
@@ -141,30 +147,6 @@ class ScriptArea extends React.Component {
                 ❌
               </button>
             </div>
-
-            {block.type === "repeat" && block.subBlocks?.length > 0 && (
-              <div className="ml-4 mt-2 bg-blue-300 p-2 rounded">
-                {block.subBlocks.map((subBlock, subIndex) => (
-                  <div
-                    key={subIndex}
-                    className="flex justify-between items-center text-sm bg-blue-400 text-white px-2 py-1 my-1 rounded"
-                  >
-                    <span>
-                      {subBlock.type}:{" "}
-                      {typeof subBlock.value === "object"
-                        ? `x:${subBlock.value.x}, y:${subBlock.value.y}`
-                        : subBlock.value}
-                    </span>
-                    <button
-                      onClick={() => this.removeSubBlock(index, subIndex)}
-                      className="text-red-300 hover:text-red-500"
-                    >
-                      ❌
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         ))}
       </div>

@@ -15,12 +15,7 @@ export default function App() {
       size: 100,
       position: { x: 0, y: 0 },
       direction: 0,
-      script: [
-        {
-          type: "move",
-          value: 10, // move forward 50 pixels
-        },
-      ],
+      script: [],
       message: "",
       run: false,
       thinking: false,
@@ -31,12 +26,7 @@ export default function App() {
       size: 100,
       position: { x: 100, y: 100 },
       direction: 0,
-      script: [
-        {
-          type: "move",
-          value: -10, // move forward 50 pixels
-        },
-      ],
+      script: [],
       message: "",
       run: false,
       thinking: false,

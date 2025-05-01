@@ -47,13 +47,6 @@ export default function PreviewArea({
       })
     );
 
-    console.log(
-      "Swapped animations between",
-      sprite1.script,
-      "and",
-      sprite2.name
-    );
-
     // Restart the execution script for both sprites
     if (sprite1.run) {
       await executeScript(sprite1.script, sprite1.id);
@@ -71,9 +64,6 @@ export default function PreviewArea({
           const sprite2 = sprites[j];
 
           if (detectCollision(sprite1, sprite2)) {
-            console.log(
-              `Collision detected between Sprite ${sprite1.id} and Sprite ${sprite2.id}`
-            );
             await swapAnimations(sprite1, sprite2, setSprites);
           }
         }
@@ -89,7 +79,6 @@ export default function PreviewArea({
     const executeScript = async (blocks, spriteId) => {
       const sprite = sprites.find((s) => s.id === spriteId);
       if (!sprite || !sprite.run || runningSpritesRef.current.has(spriteId)) {
-        console.log("Sprite");
         return;
       }
 
@@ -101,7 +90,6 @@ export default function PreviewArea({
 
           switch (block.type) {
             case "move":
-              console.log("i ran move");
               const radians = (sprite.direction * Math.PI) / 180;
               const totalDistance = block.value;
               let movedDistance = 0;
@@ -485,16 +473,19 @@ export default function PreviewArea({
             <button
               className="w-24 p-2 bg-green-500 text-white rounded-lg flex flex-col items-center justify-center border border-green-600 shadow-sm hover:bg-green-600 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
               onClick={() => {
+                const container = document.querySelector(".preview-container");
+                const maxX = container ? container.clientWidth - 100 : 500; // Adjust for sprite size
+                const randomX = Math.floor(Math.random() * maxX);
                 setSprites([
                   ...sprites,
                   {
-                    id: 4,
+                    id: Math.random(),
                     name: "Jhinga",
                     size: 100,
-                    position: { x: 10, y: 100 },
+                    position: { x: randomX, y: 200 },
                     direction: 0,
                     script: [],
-                    message: "Hmm...s",
+                    message: "",
                     run: false,
                     thinking: false,
                   },
