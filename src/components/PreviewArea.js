@@ -294,6 +294,16 @@ export default function PreviewArea({
       )
     );
   };
+  const handleDirectionChange = (value) => {
+    if (!selectedSpriteId || isNaN(value) || value === "") return;
+    setSprites((prev) =>
+      prev.map((sprite) =>
+        sprite.id === selectedSpriteId
+          ? { ...sprite, direction: parseInt(value) } // Update direction for the selected sprite
+          : sprite
+      )
+    );
+  };
 
   const handleMouseUp = () => {
     setIsDragging(false);
@@ -308,9 +318,15 @@ export default function PreviewArea({
     );
   };
 
-  const handleSizeChange = (e) => {
-    if (isNaN(e.target.value) || e.target.value === "") return;
-    setSize(e.target.value);
+  const handleSizeChange = (value) => {
+    if (!selectedSpriteId || isNaN(value) || value === "") return;
+    setSprites((prev) =>
+      prev.map((sprite) =>
+        sprite.id === selectedSpriteId
+          ? { ...sprite, size: parseInt(value) } // Update size for the selected sprite
+          : sprite
+      )
+    );
   };
 
   const handleXChange = (value) => {
@@ -376,13 +392,13 @@ export default function PreviewArea({
         ))}
       </div>
 
-      <div className="w-full h-1/2 rounded-lg mt-3 flex justify-between gap-3">
+      <div className="w-full h-1/2 rounded-lg mt-3 flex flex-col lg:flex-row justify-between gap-3">
         <div className="flex-1 bg-blue-100 rounded-lg border border-red-200 shadow">
           <div className="gap-5 bg-white p-3 rounded-lg">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap gap-3 items-center">
               <p>Sprite</p>
               <input
-                className="rounded-full px-2 py-1 w-19 border border-grey-500 shadow h-9"
+                className="rounded-full px-2 py-1 w-full sm:w-32 border border-grey-500 shadow h-9"
                 placeholder="name"
                 value={
                   selectedSpriteId
@@ -402,7 +418,7 @@ export default function PreviewArea({
               />
               <p>x-axis</p>
               <input
-                className="w-14 h-8 rounded-full outline-none text-center border border-grey-500 shadow"
+                className="w-full sm:w-14 h-8 rounded-full outline-none text-center border border-grey-500 shadow"
                 value={
                   selectedSpriteId
                     ? sprites.find((s) => s.id === selectedSpriteId)?.position
@@ -413,7 +429,7 @@ export default function PreviewArea({
               />
               <p>y-axis</p>
               <input
-                className="w-14 h-8 rounded-full outline-none text-center border border-grey-500 shadow"
+                className="w-full sm:w-14 h-8 rounded-full outline-none text-center border border-grey-500 shadow"
                 value={
                   selectedSpriteId
                     ? sprites.find((s) => s.id === selectedSpriteId)?.position
@@ -424,29 +440,32 @@ export default function PreviewArea({
               />
             </div>
 
-            <div className="flex items-center gap-3 mt-3 justify-between">
-              <div className="flex items-center gap-3">
-                <p>Show</p>
-                <button> On</button>
-                <button>Off</button>
-              </div>
-
+            <div className="flex flex-wrap gap-6 mt-3">
               <div className="flex items-center">
                 <p>Size</p>
                 <input
-                  className="ml-2 w-14 h-8 rounded-full outline-none text-center border border-grey-500 shadow"
-                  value={size}
-                  onChange={handleSizeChange}
+                  className="ml-2 w-full sm:w-14 h-8 rounded-full outline-none text-center border border-grey-500 shadow"
+                  value={
+                    selectedSpriteId
+                      ? sprites.find((s) => s.id === selectedSpriteId)?.size ||
+                        100
+                      : 100
+                  }
+                  onChange={(e) => handleSizeChange(e.target.value)}
                 />
               </div>
               <div className="flex items-center">
                 <p>Direction</p>
                 <input
-                  className="ml-2 w-14 h-8 rounded-full outline-none text-center border border-grey-500 shadow"
-                  value={direction}
+                  className="ml-2 w-full sm:w-14 h-8 rounded-full outline-none text-center border border-grey-500 shadow"
+                  value={
+                    selectedSpriteId
+                      ? sprites.find((s) => s.id === selectedSpriteId)
+                          ?.direction || 0
+                      : 0
+                  }
                   onChange={(e) => {
-                    if (isNaN(e.target.value) || e.target.value === "") return;
-                    setDirection(e.target.value);
+                    handleDirectionChange(e.target.value);
                   }}
                 />
               </div>
@@ -456,7 +475,7 @@ export default function PreviewArea({
             {sprites.map((sprite, index) => (
               <button
                 key={index}
-                className="w-24 p-2 bg-white rounded-lg flex flex-col items-center border border-gray-200 shadow-sm hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                className="w-full sm:w-1/2 lg:w-24 p-2 bg-white rounded-lg flex flex-col items-center border border-gray-200 shadow-sm hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                 onClick={() => {
                   setSelectedSpriteId(sprite.id); // Only set the selected sprite
                 }}
@@ -471,7 +490,7 @@ export default function PreviewArea({
             ))}
 
             <button
-              className="w-24 p-2 bg-green-500 text-white rounded-lg flex flex-col items-center justify-center border border-green-600 shadow-sm hover:bg-green-600 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
+              className="w-full sm:w-1/2 lg:w-24 p-2 bg-green-500 text-white rounded-lg flex flex-col items-center justify-center border border-green-600 shadow-sm hover:bg-green-600 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
               onClick={() => {
                 const container = document.querySelector(".preview-container");
                 const maxX = container ? container.clientWidth - 100 : 500; // Adjust for sprite size
@@ -512,7 +531,7 @@ export default function PreviewArea({
           </div>
         </div>
 
-        <div className="w-16 bg-white rounded-lg p-2 shadow">
+        <div className="w-full lg:w-16 bg-white rounded-lg p-2 shadow">
           <p className="text-center">Stage</p>
           <button
             onClick={handleStart} // Start all sprites
