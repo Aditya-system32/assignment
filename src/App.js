@@ -8,7 +8,6 @@ import PreviewArea from "./components/PreviewArea";
 import Sprite from "./components/Sprite";
 
 export default function App() {
-  const [script, setScript] = useState([]);
   const [sprites, setSprites] = useState([
     {
       id: 1,
@@ -16,7 +15,12 @@ export default function App() {
       size: 100,
       position: { x: 0, y: 0 },
       direction: 0,
-      script: [],
+      script: [
+        {
+          type: "move",
+          value: 10, // move forward 50 pixels
+        },
+      ],
       message: "Hello",
       run: false,
       thinking: false,
@@ -25,26 +29,48 @@ export default function App() {
       id: 2,
       name: "Mouse",
       size: 100,
-      position: { x:100, y: 100 },
+      position: { x: 100, y: 100 },
       direction: 0,
-      script: [],
+      script: [
+        {
+          type: "move",
+          value: 10, // move forward 50 pixels
+        },
+      ],
       message: "Hmm...",
       run: false,
       thinking: false,
     },
   ]);
+
+  const [selectedSpriteId, setSelectedSpriteId] = useState(null);
+
+  const handleScriptUpdate = (newScript, spriteId) => {
+    setSprites((prev) =>
+      prev.map((sprite) =>
+        sprite.id === spriteId ? { ...sprite, script: newScript } : sprite
+      )
+    );
+  };
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="bg-blue-100 pt-6 font-sans">
         <div className="h-screen overflow-hidden flex flex-row  ">
           <div className="flex-1 h-screen overflow-hidden flex flex-row bg-white border-t border-r border-gray-200 rounded-tr-xl mr-2">
-            <Sidebar script={script} /> <MidArea onScriptUpdate={setScript} />
+            <Sidebar />{" "}
+            <MidArea
+              sprites={sprites}
+              selectedSpriteId={selectedSpriteId}
+              onScriptUpdate={handleScriptUpdate}
+            />
           </div>
           <div className="w-1/3 h-screen overflow-hidden flex flex-row bg-white border-t border-l border-gray-200 rounded-tl-xl ml-2">
             <PreviewArea
-              script={script}
               sprites={sprites}
               setSprites={setSprites}
+              selectedSpriteId={selectedSpriteId}
+              setSelectedSpriteId={setSelectedSpriteId}
             />
           </div>
         </div>

@@ -1,9 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import CatSprite from "./CatSprite";
 
-export default function PreviewArea({ script, sprites, setSprites }) {
-  const [run, setRun] = useState(false);
-
+export default function PreviewArea({
+  sprites,
+  setSprites,
+  selectedSpriteId,
+  setSelectedSpriteId,
+}) {
+  const runningSpritesRef = useRef(new Set());
   const [direction, setDirection] = useState(0);
   const [message, setMessage] = useState("");
   const [thinking, setThinking] = useState("");
@@ -11,49 +15,116 @@ export default function PreviewArea({ script, sprites, setSprites }) {
   const [size, setSize] = useState(100);
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [selectedSpriteId, setSelectedSpriteId] = useState(null);
 
-  const delay = (ms) => new Promise((res) => setTimeout(res, ms));
+  const delay = React.useCallback(
+    (ms) => new Promise((res) => setTimeout(res, ms)),
+    []
+  );
 
   useEffect(() => {
-    const executeScript = async (blocks) => {
-      for (const block of blocks) {
-        if (block.type === "move") {
-          const radians = (direction * Math.PI) / 180;
-          setPosition((prev) => ({
-            x: prev.x + Math.cos(radians) * block.value,
-            y: prev.y + Math.sin(radians) * block.value,
-          }));
-        } else if (block.type === "turn-right") {
-          setDirection((prev) => (prev + block.value) % 360);
-        } else if (block.type === "turn-left") {
-          setDirection((prev) => (prev - block.value + 360) % 360);
-        } else if (block.type === "goto") {
-          setPosition(block.value);
-        } else if (block.type === "say") {
-          setMessage(block.value);
-          await delay(block.duration * 1000);
-          setMessage("");
-        } else if (block.type === "think") {
-          setThinking(block.value);
-          await delay(block.duration * 1000);
-          setThinking("");
-        } else if (block.type === "repeat") {
-          for (let i = 0; i < block.value; i++) {
-            console.log(block);
-            if (block.subscript) {
-              await executeScript(block.subscript);
-            }
+    const executeScript = async (blocks, spriteId) => {
+      const sprite = sprites.find((s) => s.id === spriteId);
+      if (!sprite || !sprite.run || runningSpritesRef.current.has(spriteId))
+        return;
+
+      runningSpritesRef.current.add(spriteId); // Mark sprite as running
+
+      try {
+        for (const block of blocks) {
+          if (!sprite.run) break;
+
+          switch (block.type) {
+            case "move":
+              const radians = (sprite.direction * Math.PI) / 180;
+              const totalDistance = block.value;
+              let movedDistance = 0;
+              const stepSize = 1;
+
+              while (movedDistance < Math.abs(totalDistance)) {
+                await new Promise((resolve) => {
+                  setSprites((prev) =>
+                    prev.map((s) => {
+                      if (s.id !== spriteId) return s;
+
+                      const stepX = Math.cos(radians) * stepSize;
+                      const stepY = Math.sin(radians) * stepSize;
+
+                      const newX = s.position.x + stepX;
+                      const newY = s.position.y + stepY;
+
+                      const container =
+                        document.querySelector(".preview-container");
+                      const maxX = container
+                        ? container.clientWidth - 100
+                        : 500;
+                      const maxY = container
+                        ? container.clientHeight - 100
+                        : 300;
+
+                      const constrainedX = Math.min(Math.max(0, newX), maxX);
+                      const constrainedY = Math.min(Math.max(0, newY), maxY);
+
+                      movedDistance += Math.sqrt(stepX ** 2 + stepY ** 2);
+
+                      return {
+                        ...s,
+                        position: {
+                          x: constrainedX,
+                          y: constrainedY,
+                        },
+                      };
+                    })
+                  );
+                  setTimeout(resolve, 10);
+                });
+              }
+              break;
+
+            case "turn-right":
+            case "turn-left":
+              const angleChange =
+                block.type === "turn-right" ? block.value : -block.value;
+              setSprites((prev) =>
+                prev.map((s) =>
+                  s.id === spriteId
+                    ? {
+                        ...s,
+                        direction: (s.direction + angleChange + 360) % 360,
+                      }
+                    : s
+                )
+              );
+              break;
+
+            case "say":
+              setSprites((prev) =>
+                prev.map((s) =>
+                  s.id === spriteId ? { ...s, message: block.value } : s
+                )
+              );
+              await delay(block.duration * 1000);
+              setSprites((prev) =>
+                prev.map((s) => (s.id === spriteId ? { ...s, message: "" } : s))
+              );
+              break;
           }
+          await delay(300);
         }
-        await delay(300);
+      } finally {
+        setSprites((prev) =>
+          prev.map((s) => (s.id === spriteId ? { ...s, run: false } : s))
+        );
+        runningSpritesRef.current.delete(spriteId); // Mark sprite as finished
       }
     };
 
-    if (run && Array.isArray(script)) {
-      executeScript(script).finally(() => setRun(false));
-    }
-  }, [run]);
+    // Execute scripts for all running sprites
+    sprites.forEach((sprite) => {
+      if (sprite.run && Array.isArray(sprite.script)) {
+        executeScript(sprite.script, sprite.id);
+      }
+    });
+  }, [sprites, delay, setSprites]);
   const handleMouseDown = (e, spriteId) => {
     e.stopPropagation();
     setIsDragging(true);
@@ -110,8 +181,12 @@ export default function PreviewArea({ script, sprites, setSprites }) {
   };
 
   const handleStart = () => {
-    setRun(false);
-    setTimeout(() => setRun(true), 50);
+    setSprites((prev) =>
+      prev.map((sprite) => ({
+        ...sprite,
+        run: true, // Set all sprites to run
+      }))
+    );
   };
 
   const handleSizeChange = (e) => {
@@ -199,8 +274,21 @@ export default function PreviewArea({ script, sprites, setSprites }) {
               <input
                 className="rounded-full px-2 py-1 w-19 border border-grey-500 shadow h-9"
                 placeholder="name"
-                value={spriteName}
-                onChange={(e) => setSpriteName(e.target.value)}
+                value={
+                  selectedSpriteId
+                    ? sprites.find((s) => s.id === selectedSpriteId)?.name || ""
+                    : ""
+                }
+                onChange={(e) => {
+                  const newName = e.target.value;
+                  setSprites((prev) =>
+                    prev.map((sprite) =>
+                      sprite.id === selectedSpriteId
+                        ? { ...sprite, name: newName }
+                        : sprite
+                    )
+                  );
+                }}
               />
               <p>x-axis</p>
               <input
@@ -260,8 +348,7 @@ export default function PreviewArea({ script, sprites, setSprites }) {
                 key={index}
                 className="w-24 p-2 bg-white rounded-lg flex flex-col items-center border border-gray-200 shadow-sm hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                 onClick={() => {
-                  setPosition({ x: 0, y: 0 });
-                  // Additional click handling
+                  setSelectedSpriteId(sprite.id); // Only set the selected sprite
                 }}
               >
                 <div className="w-full aspect-square flex items-center justify-center">
@@ -314,7 +401,12 @@ export default function PreviewArea({ script, sprites, setSprites }) {
 
         <div className="w-16 bg-white rounded-lg p-2 shadow">
           <p className="text-center">Stage</p>
-          <button onClick={handleStart}>start</button>
+          <button
+            onClick={handleStart} // Start all sprites
+            className="w-full px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+          >
+            Start All
+          </button>
         </div>
       </div>
     </div>
