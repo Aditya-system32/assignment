@@ -6,7 +6,7 @@ export default function CatSprite({
   run,
   position = { x: 0, y: 0 },
   setPosition,
-  direction,
+  direction=0,
   setDirection,
   message,
   setMessage,

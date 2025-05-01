@@ -34,6 +34,29 @@ class ScriptArea extends React.Component {
     );
   };
 
+  removeBlock = (index) => {
+    this.setState(
+      (prev) => {
+        const blocks = [...prev.blocks];
+        blocks.splice(index, 1);
+        return { blocks };
+      },
+      () => this.props.onScriptUpdate(this.state.blocks)
+    );
+  };
+
+  removeSubBlock = (parentIndex, subIndex) => {
+    this.setState(
+      (prev) => {
+        const blocks = [...prev.blocks];
+        const subBlocks = blocks[parentIndex].subBlocks || [];
+        subBlocks.splice(subIndex, 1);
+        return { blocks };
+      },
+      () => this.props.onScriptUpdate(this.state.blocks)
+    );
+  };
+
   render() {
     const { connectDropTarget } = this.props;
 
@@ -43,12 +66,46 @@ class ScriptArea extends React.Component {
         {this.state.blocks.map((b, i) => (
           <div
             key={i}
-            className="bg-blue-500 text-white px-4 py-2 mb-2 mt-2 rounded shadow cursor-pointer flex items-center gap-2 justify-center"
+            className="bg-blue-500 text-white px-4 py-2 mb-2 rounded shadow"
           >
-            {b.type}:{" "}
-            {typeof b.value === "object"
-              ? `x:${b.value.x}, y:${b.value.y}`
-              : b.value}
+            <div className="flex justify-between items-center">
+              <span>
+                {b.type}:{" "}
+                {typeof b.value === "object"
+                  ? `x:${b.value.x}, y:${b.value.y}`
+                  : b.value}
+              </span>
+              <button
+                onClick={() => this.removeBlock(i)}
+                className="ml-2 text-red-300 hover:text-red-500"
+              >
+                ❌
+              </button>
+            </div>
+
+            {b.type === "repeat" && b.subBlocks?.length > 0 && (
+              <div className="ml-4 mt-2 bg-blue-300 p-2 rounded">
+                {b.subBlocks.map((sb, si) => (
+                  <div
+                    key={si}
+                    className="flex justify-between items-center text-sm bg-blue-400 text-white px-2 py-1 my-1 rounded"
+                  >
+                    <span>
+                      {sb.type}:{" "}
+                      {typeof sb.value === "object"
+                        ? `x:${sb.value.x}, y:${sb.value.y}`
+                        : sb.value}
+                    </span>
+                    <button
+                      onClick={() => this.removeSubBlock(i, si)}
+                      className="text-red-300 hover:text-red-500"
+                    >
+                      ❌
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         ))}
       </div>
