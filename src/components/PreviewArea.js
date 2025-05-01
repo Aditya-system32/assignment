@@ -15,6 +15,7 @@ export default function PreviewArea({
   const [size, setSize] = useState(100);
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [isRunning, setIsRunning] = useState(false);
 
   const delay = React.useCallback(
     (ms) => new Promise((res) => setTimeout(res, ms)),
@@ -76,6 +77,7 @@ export default function PreviewArea({
   }, [sprites, setSprites]);
 
   useEffect(() => {
+    // Skip if not running
     const executeScript = async (blocks, spriteId) => {
       const sprite = sprites.find((s) => s.id === spriteId);
       if (!sprite || !sprite.run || runningSpritesRef.current.has(spriteId)) {
@@ -310,6 +312,7 @@ export default function PreviewArea({
   };
 
   const handleStart = () => {
+    setIsRunning(true);
     setSprites((prev) =>
       prev.map((sprite) => ({
         ...sprite,
@@ -352,6 +355,13 @@ export default function PreviewArea({
   };
   return (
     <div className="flex-none h-full w-full bg-blue-100 overflow-y-auto p-2">
+      <button
+        onClick={handleStart} // Start all sprites
+        className="w-36 right-3 px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+      >
+        Start All
+      </button>
+
       <div
         className="preview-container w-full h-1/2 bg-white rounded-lg relative overflow-hidden"
         onMouseMove={handleMouseMove}
@@ -473,35 +483,50 @@ export default function PreviewArea({
           </div>
           <div className="flex flex-wrap gap-2 p-3">
             {sprites.map((sprite, index) => (
-              <button
-                key={index}
-                className="w-full sm:w-1/2 lg:w-24 p-2 bg-white rounded-lg flex flex-col items-center border border-gray-200 shadow-sm hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                onClick={() => {
-                  setSelectedSpriteId(sprite.id); // Only set the selected sprite
-                }}
-              >
-                <div className="w-full aspect-square flex items-center justify-center">
-                  <CatSprite size={60} />
-                </div>
-                <p className="text-center text-sm font-medium text-gray-600 mt-2">
-                  {sprite.name || spriteName}
-                </p>
-              </button>
+              <div>
+                <button
+                  key={index}
+                  className="w-full sm:w-1/2 lg:w-24 p-2 bg-white rounded-lg flex flex-col items-center border border-gray-200 shadow-sm hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  onClick={() => {
+                    setSelectedSpriteId(sprite.id);
+                  }}
+                >
+                  <div className="w-full aspect-square flex items-center justify-center">
+                    <CatSprite size={60} />
+                  </div>
+                  <p className="text-center text-sm font-medium text-gray-600 mt-2">
+                    {sprite.name || spriteName}
+                  </p>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent triggering the parent button's onClick
+                      setSprites((prev) =>
+                        prev.filter((s) => s.id !== sprite.id)
+                      ); // Remove the sprite
+                    }}
+                    className="bg-red-600 w-20 rounded text-white h-8"
+                  >
+                    Delete
+                  </button>
+                </button>
+              </div>
             ))}
 
             <button
               className="w-full sm:w-1/2 lg:w-24 p-2 bg-green-500 text-white rounded-lg flex flex-col items-center justify-center border border-green-600 shadow-sm hover:bg-green-600 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
               onClick={() => {
                 const container = document.querySelector(".preview-container");
-                const maxX = container ? container.clientWidth - 100 : 500; // Adjust for sprite size
+                const maxX = container ? container.clientWidth - 100 : 500; 
+                const maxY = container ? container.clientWidth - 200 : 300;
                 const randomX = Math.floor(Math.random() * maxX);
+                const randomY = Math.floor(Math.random() * maxY); 
                 setSprites([
                   ...sprites,
                   {
                     id: Math.random(),
-                    name: "Jhinga",
+                    name: "Mouse",
                     size: 100,
-                    position: { x: randomX, y: 200 },
+                    position: { x: randomX, y: randomY },
                     direction: 0,
                     script: [],
                     message: "",
@@ -533,12 +558,6 @@ export default function PreviewArea({
 
         <div className="w-full lg:w-16 bg-white rounded-lg p-2 shadow">
           <p className="text-center">Stage</p>
-          <button
-            onClick={handleStart} // Start all sprites
-            className="w-full px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600"
-          >
-            Start All
-          </button>
         </div>
       </div>
     </div>

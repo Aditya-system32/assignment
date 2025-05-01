@@ -20,17 +20,6 @@ export default function App() {
       run: false,
       thinking: false,
     },
-    {
-      id: 2,
-      name: "Mouse",
-      size: 100,
-      position: { x: 100, y: 100 },
-      direction: 0,
-      script: [],
-      message: "",
-      run: false,
-      thinking: false,
-    },
   ]);
 
   const [selectedSpriteId, setSelectedSpriteId] = useState(null);
