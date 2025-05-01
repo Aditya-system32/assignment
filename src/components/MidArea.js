@@ -3,23 +3,18 @@ import { DropTarget } from "react-dnd";
 import PropTypes from "prop-types";
 
 const scriptTarget = {
-  drop(props, monitor) {
-    if (!monitor.isOver()) return;
+  drop(props, monitor, component) {
     const item = monitor.getItem();
     if (!item || !props.selectedSpriteId) return;
 
-    // Add the dropped block
     const newBlock = {
       type: item.type,
       value: item.value,
       duration: item.duration,
-      subBlocks: [],
+      subBlocks: item.subBlocks || [], // Preserve subBlocks
     };
 
-    // Get current blocks and append new block
-    const currentBlocks =
-      props.sprites.find((s) => s.id === props.selectedSpriteId)?.script || [];
-    props.onScriptUpdate([...currentBlocks, newBlock], props.selectedSpriteId);
+    component.addBlock(newBlock); // Add the block immediately
   },
   canDrop(props) {
     return !!props.selectedSpriteId;
@@ -60,26 +55,23 @@ class ScriptArea extends React.Component {
 
   addBlock = (block) => {
     if (!this.props.selectedSpriteId) return;
-
+  
     this.setState(
       (prev) => {
         const blocks = [...prev.blocks];
         const lastBlock = blocks[blocks.length - 1];
-
+  
+        // If the last block is a "repeat" block, add to its subBlocks
         if (lastBlock && lastBlock.type === "repeat") {
-          if (!lastBlock.subBlocks) lastBlock.subBlocks = [];
           lastBlock.subBlocks.push(block);
         } else {
           blocks.push(block);
         }
-
+  
         return { blocks };
       },
       () => {
-        this.props.onScriptUpdate(
-          this.state.blocks,
-          this.props.selectedSpriteId
-        );
+        this.props.onScriptUpdate(this.state.blocks, this.props.selectedSpriteId);
       }
     );
   };
@@ -128,7 +120,7 @@ class ScriptArea extends React.Component {
     }
 
     return connectDropTarget(
-      <div className="bg-white-700 p-4 min-h-[200px] w-full rounded shadow">
+      <div className="bg-white-700 p-4 min-h-[200px] h-full w-full rounded shadow">
         <h4 className="font-bold mb-3">Script Area</h4>
         {this.state.blocks.map((block, index) => (
           <div

@@ -21,33 +21,86 @@ export default function PreviewArea({
     []
   );
 
+  const detectCollision = (sprite1, sprite2) => {
+    const size1 = sprite1.size / 2;
+    const size2 = sprite2.size / 2;
+  
+    const x1 = sprite1.position.x + size1;
+    const y1 = sprite1.position.y + size1;
+    const x2 = sprite2.position.x + size2;
+    const y2 = sprite2.position.y + size2;
+  
+    const distance = Math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2);
+  
+    return distance < size1 + size2; // Collision occurs if the distance is less than the sum of radii
+  };
+
+  const swapAnimations = (sprite1, sprite2, setSprites) => {
+
+    setSprites((prevSprites) =>
+      prevSprites.map((sprite) => {
+        if (sprite.id === sprite1.id) {
+          return { ...sprite, script: sprite2.script };
+        } else if (sprite.id === sprite2.id) {
+          return { ...sprite, script: sprite1.script };
+        }
+        return sprite;
+      })
+    );
+    console.log("Swapped animations between", sprite1.script, "and", sprite2.name);
+  };
+
+  useEffect(() => {
+    const checkCollisions = () => {
+      for (let i = 0; i < sprites.length; i++) {
+        for (let j = i + 1; j < sprites.length; j++) {
+          const sprite1 = sprites[i];
+          const sprite2 = sprites[j];
+  
+          if (detectCollision(sprite1, sprite2)) {
+            console.log(`Collision detected between Sprite ${sprite1.id} and Sprite ${sprite2.id}`);
+            swapAnimations(sprite1, sprite2, setSprites);
+          }
+        }
+      }
+    };
+  
+    const interval = setInterval(checkCollisions, 100); // Check for collisions every 100ms
+  
+    return () => clearInterval(interval); // Cleanup on component unmount
+  }, [sprites, setSprites]);
+
   useEffect(() => {
     const executeScript = async (blocks, spriteId) => {
+      console.log(blocks, spriteId);
       const sprite = sprites.find((s) => s.id === spriteId);
       if (!sprite || !sprite.run || runningSpritesRef.current.has(spriteId))
         return;
 
       runningSpritesRef.current.add(spriteId); // Mark sprite as running
-
+      console.log(blocks);
       try {
         for (const block of blocks) {
           if (!sprite.run) break;
 
           switch (block.type) {
             case "move":
+              console.log("i ran move");
               const radians = (sprite.direction * Math.PI) / 180;
               const totalDistance = block.value;
               let movedDistance = 0;
               const stepSize = 1;
 
-              while (movedDistance < Math.abs(totalDistance)) {
+              while (Math.abs(movedDistance) < Math.abs(totalDistance)) {
                 await new Promise((resolve) => {
                   setSprites((prev) =>
                     prev.map((s) => {
                       if (s.id !== spriteId) return s;
 
-                      const stepX = Math.cos(radians) * stepSize;
-                      const stepY = Math.sin(radians) * stepSize;
+                      const stepX =
+                        Math.cos(radians) * stepSize * Math.sign(totalDistance);
+                      const stepY =
+                        Math.sin(radians) * stepSize * Math.sign(totalDistance);
 
                       const newX = s.position.x + stepX;
                       const newY = s.position.y + stepY;
@@ -75,9 +128,33 @@ export default function PreviewArea({
                       };
                     })
                   );
-                  setTimeout(resolve, 10);
+                  setTimeout(resolve, 10); // Small delay for smooth animation
                 });
               }
+              break;
+
+            case "goto":
+              const { x, y } = block.value; // Extract x and y coordinates
+              const container = document.querySelector(".preview-container");
+              setSprites((prev) =>
+                prev.map((s) =>
+                  s.id === spriteId
+                    ? {
+                        ...s,
+                        position: {
+                          x: Math.min(
+                            Math.max(0, x),
+                            container.clientWidth - 100
+                          ), // Constrain within container
+                          y: Math.min(
+                            Math.max(0, y),
+                            container.clientHeight - 100
+                          ), // Constrain within container
+                        },
+                      }
+                    : s
+                )
+              );
               break;
 
             case "turn-right":
@@ -107,6 +184,38 @@ export default function PreviewArea({
                 prev.map((s) => (s.id === spriteId ? { ...s, message: "" } : s))
               );
               break;
+
+            case "think":
+              setSprites((prev) =>
+                prev.map((s) =>
+                  s.id === spriteId ? { ...s, thinking: block.value } : s
+                )
+              );
+              await delay(block.duration * 1000); // Wait for the specified duration
+              setSprites((prev) =>
+                prev.map((s) =>
+                  s.id === spriteId ? { ...s, thinking: "" } : s
+                )
+              );
+              break;
+
+            case "repeat":
+              const repeatCount = block.value; // Number of times to repeat
+              const currentIndex = blocks.indexOf(block); // Find the index of the "repeat" block
+              const blocksToRepeat = blocks.slice(0, currentIndex); // Get all blocks above the "repeat" block
+
+              for (let i = 0; i < repeatCount; i++) {
+                console.log(`Iteration ${i + 1} of repeat`);
+                for (const repeatBlock of blocksToRepeat) {
+                  if (!sprite.run) break; // Stop if the sprite is no longer running
+                  console.log(`Executing block inside repeat:`, repeatBlock);
+                  await executeScript([repeatBlock], spriteId); // Execute each block recursively
+                }
+                await delay(300); // Add a delay between iterations for smoother movement
+              }
+              break;
+            default:
+              console.warn(`Unknown block type: ${block.type}`);
           }
           await delay(300);
         }
@@ -125,6 +234,7 @@ export default function PreviewArea({
       }
     });
   }, [sprites, delay, setSprites]);
+
   const handleMouseDown = (e, spriteId) => {
     e.stopPropagation();
     setIsDragging(true);
@@ -215,15 +325,6 @@ export default function PreviewArea({
       )
     );
   };
-
-  const updateSelectedSprite = (updates) => {
-    setSprites((prev) =>
-      prev.map((sprite) =>
-        sprite.id === selectedSpriteId ? { ...sprite, ...updates } : sprite
-      )
-    );
-  };
-  console.log(sprites);
   return (
     <div className="flex-none h-full w-full bg-blue-100 overflow-y-auto p-2">
       <div

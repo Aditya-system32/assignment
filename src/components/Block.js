@@ -3,14 +3,13 @@ import React, { Component } from "react";
 import { DragSource } from "react-dnd";
 
 const blockSource = {
-  beginDrag(props) {
+  beginDrag(props, monitor, component) {
     return {
       type: props.type,
-      value: props.initialValue,
-      duration: props.duration,
-      subBlocks: [],
+      value: component.state.inputValue, // Use the current state value
+      duration: component.state.duration, // Use the current state duration
     };
-  }
+  },
 };
 
 class Block extends Component {
@@ -164,16 +163,10 @@ class Block extends Component {
 }
 
 export default DragSource(
-  'BLOCK', // Match this with the drop target type in MidArea.js
-  {
-    beginDrag: (props) => ({
-      type: props.type,
-      value: props.value,
-      duration: props.duration
-    })
-  },
+  'BLOCK', // Ensure this matches the drop target type
+  blockSource,
   (connect, monitor) => ({
     connectDragSource: connect.dragSource(),
-    isDragging: monitor.isDragging()
+    isDragging: monitor.isDragging(),
   })
 )(Block);

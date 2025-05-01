@@ -19,7 +19,7 @@ export default function Sidebar({script}) {
       <Block type="turn-left" initialValue={15} icon="⬅" />
       <Block type="turn-right" initialValue={15} icon="➡" />
       <Block type="goto" initialValue={{ x: 100, y: 100 }} icon="📍" />
-      <Block type="repeat" initialValue={5} icon="🔁" subscript={script}/>
+      <Block type="repeat" initialValue={5} icon="🔁" subBlocks={[]}/>
       <div className="font-bold"> {"Looks"} </div>
       <Block type="say" initialValue="Hello" duration={2} icon="🗣" />
       <Block type="think" initialValue="Hmm..." duration={3} icon="🤔" />

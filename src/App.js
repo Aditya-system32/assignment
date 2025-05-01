@@ -21,7 +21,7 @@ export default function App() {
           value: 10, // move forward 50 pixels
         },
       ],
-      message: "Hello",
+      message: "",
       run: false,
       thinking: false,
     },
@@ -34,10 +34,10 @@ export default function App() {
       script: [
         {
           type: "move",
-          value: 10, // move forward 50 pixels
+          value: -10, // move forward 50 pixels
         },
       ],
-      message: "Hmm...",
+      message: "",
       run: false,
       thinking: false,
     },
