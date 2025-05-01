@@ -35,27 +35,36 @@ export default function PreviewArea({
     return distance < size1 + size2; // Collision occurs if the distance is less than the sum of radii
   };
 
-  const swapAnimations = (sprite1, sprite2, setSprites) => {
+  const swapAnimations = async (sprite1, sprite2, setSprites) => {
     setSprites((prevSprites) =>
       prevSprites.map((sprite) => {
         if (sprite.id === sprite1.id) {
-          return { ...sprite, script: sprite2.script };
+          return { ...sprite, script: sprite2.script, run: true }; // Restart script for sprite1
         } else if (sprite.id === sprite2.id) {
-          return { ...sprite, script: sprite1.script };
+          return { ...sprite, script: sprite1.script, run: true }; // Restart script for sprite2
         }
         return sprite;
       })
     );
+
     console.log(
       "Swapped animations between",
       sprite1.script,
       "and",
       sprite2.name
     );
+
+    // Restart the execution script for both sprites
+    if (sprite1.run) {
+      await executeScript(sprite1.script, sprite1.id);
+    }
+    if (sprite2.run) {
+      await executeScript(sprite2.script, sprite2.id);
+    }
   };
 
   useEffect(() => {
-    const checkCollisions = () => {
+    const checkCollisions = async () => {
       for (let i = 0; i < sprites.length; i++) {
         for (let j = i + 1; j < sprites.length; j++) {
           const sprite1 = sprites[i];
@@ -65,7 +74,7 @@ export default function PreviewArea({
             console.log(
               `Collision detected between Sprite ${sprite1.id} and Sprite ${sprite2.id}`
             );
-            swapAnimations(sprite1, sprite2, setSprites);
+            await swapAnimations(sprite1, sprite2, setSprites);
           }
         }
       }
@@ -79,14 +88,12 @@ export default function PreviewArea({
   useEffect(() => {
     const executeScript = async (blocks, spriteId) => {
       const sprite = sprites.find((s) => s.id === spriteId);
-      if (!sprite || !sprite.run) {
-        console.log("Sprite is not running:", spriteId);
+      if (!sprite || !sprite.run || runningSpritesRef.current.has(spriteId)) {
+        console.log("Sprite");
         return;
       }
 
-      if (!runningSpritesRef.current.has(spriteId)) {
-        runningSpritesRef.current.add(spriteId); // Mark sprite as running
-      }
+      runningSpritesRef.current.add(spriteId);
 
       try {
         for (const block of blocks) {
@@ -213,15 +220,20 @@ export default function PreviewArea({
               const currentIndex = blocks.indexOf(block); // Find the index of the "repeat" block
               const blocksToRepeat = blocks.slice(0, currentIndex); // Get all blocks above the "repeat" block
 
+              // Remove the spriteId from runningSpritesRef before repeating
+              runningSpritesRef.current.delete(spriteId);
+
               for (let i = 0; i < repeatCount; i++) {
-                //console.log(`Iteration ${i + 1} of repeat`);
+                console.log(`Iteration ${i + 1} of repeat`);
                 for (const repeatBlock of blocksToRepeat) {
                   if (!sprite.run) break; // Stop if the sprite is no longer running
-                  console.log(`Executing block inside repeat:`, repeatBlock);
                   await executeScript([repeatBlock], spriteId); // Execute each block recursively
                 }
                 await delay(300); // Add a delay between iterations for smoother movement
               }
+
+              // Ensure the spriteId is removed after the repeat block finishes
+              runningSpritesRef.current.delete(spriteId);
               break;
             default:
               console.warn(`Unknown block type: ${block.type}`);
