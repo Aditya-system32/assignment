@@ -301,7 +301,7 @@ export default function PreviewArea({
     setSprites((prev) =>
       prev.map((sprite) =>
         sprite.id === selectedSpriteId
-          ? { ...sprite, direction: value === "" ? "" : parseInt(value) } // Allow empty value
+          ? { ...sprite, direction: value === "" ? "" : parseInt(value, 10) } // Allow empty value
           : sprite
       )
     );
@@ -326,7 +326,7 @@ export default function PreviewArea({
     setSprites((prev) =>
       prev.map((sprite) =>
         sprite.id === selectedSpriteId
-          ? { ...sprite, size: value === "" ? "" : parseInt(value) } // Allow empty value
+          ? { ...sprite, size: value === "" ? "" : parseInt(value, 10) } // Allow empty value
           : sprite
       )
     );
@@ -457,7 +457,7 @@ export default function PreviewArea({
                   className="ml-2 w-full sm:w-14 h-8 rounded-full outline-none text-center border border-grey-500 shadow"
                   value={
                     selectedSpriteId
-                      ? sprites.find((s) => s.id === selectedSpriteId)?.size ||
+                      ? sprites.find((s) => s.id === selectedSpriteId)?.size ??
                         ""
                       : ""
                   }
@@ -471,7 +471,7 @@ export default function PreviewArea({
                   value={
                     selectedSpriteId
                       ? sprites.find((s) => s.id === selectedSpriteId)
-                          ?.direction || ""
+                          ?.direction ?? ""
                       : ""
                   }
                   onChange={(e) => handleDirectionChange(e.target.value)}
