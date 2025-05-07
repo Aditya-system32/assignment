@@ -297,11 +297,11 @@ export default function PreviewArea({
     );
   };
   const handleDirectionChange = (value) => {
-    if (!selectedSpriteId || isNaN(value) || value === "") return;
+    if (!selectedSpriteId) return;
     setSprites((prev) =>
       prev.map((sprite) =>
         sprite.id === selectedSpriteId
-          ? { ...sprite, direction: parseInt(value) } // Update direction for the selected sprite
+          ? { ...sprite, direction: value === "" ? "" : parseInt(value) } // Allow empty value
           : sprite
       )
     );
@@ -322,11 +322,11 @@ export default function PreviewArea({
   };
 
   const handleSizeChange = (value) => {
-    if (!selectedSpriteId || isNaN(value) || value === "") return;
+    if (!selectedSpriteId) return;
     setSprites((prev) =>
       prev.map((sprite) =>
         sprite.id === selectedSpriteId
-          ? { ...sprite, size: parseInt(value) } // Update size for the selected sprite
+          ? { ...sprite, size: value === "" ? "" : parseInt(value) } // Allow empty value
           : sprite
       )
     );
@@ -458,8 +458,8 @@ export default function PreviewArea({
                   value={
                     selectedSpriteId
                       ? sprites.find((s) => s.id === selectedSpriteId)?.size ||
-                        100
-                      : 100
+                        ""
+                      : ""
                   }
                   onChange={(e) => handleSizeChange(e.target.value)}
                 />
@@ -471,12 +471,10 @@ export default function PreviewArea({
                   value={
                     selectedSpriteId
                       ? sprites.find((s) => s.id === selectedSpriteId)
-                          ?.direction || 0
-                      : 0
+                          ?.direction || ""
+                      : ""
                   }
-                  onChange={(e) => {
-                    handleDirectionChange(e.target.value);
-                  }}
+                  onChange={(e) => handleDirectionChange(e.target.value)}
                 />
               </div>
             </div>
@@ -516,10 +514,10 @@ export default function PreviewArea({
               className="w-full sm:w-1/2 lg:w-24 p-2 bg-green-500 text-white rounded-lg flex flex-col items-center justify-center border border-green-600 shadow-sm hover:bg-green-600 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
               onClick={() => {
                 const container = document.querySelector(".preview-container");
-                const maxX = container ? container.clientWidth - 100 : 500; 
+                const maxX = container ? container.clientWidth - 100 : 500;
                 const maxY = container ? container.clientWidth - 200 : 300;
                 const randomX = Math.floor(Math.random() * maxX);
-                const randomY = Math.floor(Math.random() * maxY); 
+                const randomY = Math.floor(Math.random() * maxY);
                 setSprites([
                   ...sprites,
                   {
