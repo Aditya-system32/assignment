@@ -61,16 +61,7 @@ class ScriptArea extends React.Component {
         const blocks = [...prev.blocks];
         const lastBlock = blocks[blocks.length - 1];
 
-        // Only add to subBlocks if the last block is a "repeat" block and it is not the bottom-most block
-        if (
-          lastBlock &&
-          lastBlock.type === "repeat" &&
-          block.type !== "repeat-end"
-        ) {
-          lastBlock.subBlocks.push(block);
-        } else {
-          blocks.push(block);
-        }
+        blocks.push(block);
 
         return { blocks };
       },
