@@ -16,6 +16,7 @@ export default function PreviewArea({
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isRunning, setIsRunning] = useState(false);
+  const [selectedSpriteIds, setSelectedSpriteIds] = useState([]); // Array of selected sprite IDs
 
   const delay = React.useCallback(
     (ms) => new Promise((res) => setTimeout(res, ms)),
@@ -312,12 +313,14 @@ export default function PreviewArea({
   };
 
   const handleStart = () => {
-    setIsRunning(true);
+    if (selectedSpriteIds.length === 0) return; // Do nothing if no sprites are selected
     setSprites((prev) =>
-      prev.map((sprite) => ({
-        ...sprite,
-        run: true, // Set all sprites to run
-      }))
+      prev.map(
+        (sprite) =>
+          selectedSpriteIds.includes(sprite.id)
+            ? { ...sprite, run: true } // Start only selected sprites
+            : { ...sprite, run: false } // Ensure other sprites are not running
+      )
     );
   };
 
@@ -356,10 +359,10 @@ export default function PreviewArea({
   return (
     <div className="flex-none h-full w-full bg-blue-100 overflow-y-auto p-2">
       <button
-        onClick={handleStart} // Start all sprites
+        onClick={handleStart} // Start all selected sprites
         className="w-36 right-3 px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600"
       >
-        Start All
+        Start Selected
       </button>
 
       <div
@@ -372,31 +375,45 @@ export default function PreviewArea({
           <div
             key={sprite.id}
             data-sprite-id={sprite.id}
-            onClick={() => setSelectedSpriteId(sprite.id)}
+            onClick={(e) => {
+              if (e.ctrlKey) {
+                // Toggle selection with Ctrl + Click
+                setSelectedSpriteIds(
+                  (prev) =>
+                    prev.includes(sprite.id)
+                      ? prev.filter((id) => id !== sprite.id) // Deselect if already selected
+                      : [...prev, sprite.id] // Add to selection if not already selected
+                );
+              } else {
+                // Single selection without Ctrl
+                setSelectedSpriteIds([sprite.id]);
+              }
+            }}
             onMouseDown={(e) => handleMouseDown(e, sprite.id)}
             style={{
               position: "absolute",
               left: `${sprite.position.x}px`,
               top: `${sprite.position.y}px`,
               cursor:
-                isDragging && selectedSpriteId === sprite.id
+                isDragging && selectedSpriteIds.includes(sprite.id)
                   ? "grabbing"
                   : "grab",
               transform: `scale(${sprite.size / 100})`,
               transformOrigin: "center center",
               borderRadius: "20%",
-              border:
-                selectedSpriteId === sprite.id ? "2px solid blue" : "none",
-              zIndex: selectedSpriteId === sprite.id ? 10 : 1,
+              border: selectedSpriteIds.includes(sprite.id)
+                ? "2px solid blue"
+                : "none", // Highlight selected sprites
+              zIndex: selectedSpriteIds.includes(sprite.id) ? 10 : 1,
             }}
             className="cat-sprite"
           >
             <CatSprite
-              position={{ x: 0, y: 0 }} // Reset position since parent div handles positioning
+              position={{ x: 0, y: 0 }}
               direction={sprite.direction}
               message={sprite.message}
               thinking={sprite.thinking}
-              size={100} // Use 100 since we're scaling with the parent div
+              size={100}
             />
           </div>
         ))}
@@ -481,12 +498,26 @@ export default function PreviewArea({
           </div>
           <div className="flex flex-wrap gap-2 p-3">
             {sprites.map((sprite, index) => (
-              <div>
+              <div key={index}>
                 <button
-                  key={index}
-                  className="w-full sm:w-1/2 lg:w-24 p-2 bg-white rounded-lg flex flex-col items-center border border-gray-200 shadow-sm hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                  onClick={() => {
-                    setSelectedSpriteId(sprite.id);
+                  className={`w-full sm:w-1/2 lg:w-24 p-2 rounded-lg flex flex-col items-center border shadow-sm hover:bg-gray-50 bg-white focus:outline-none transition-all ${
+                    selectedSpriteIds.includes(sprite.id)
+                      ? "border-blue-500"
+                      : "border-gray-200"
+                  }`} // Add blue border if selected
+                  onClick={(e) => {
+                    if (e.ctrlKey) {
+                      // Toggle selection with Ctrl + Click
+                      setSelectedSpriteIds(
+                        (prev) =>
+                          prev.includes(sprite.id)
+                            ? prev.filter((id) => id !== sprite.id) // Deselect if already selected
+                            : [...prev, sprite.id] // Add to selection if not already selected
+                      );
+                    } else {
+                      // Single selection without Ctrl
+                      setSelectedSpriteIds([sprite.id]);
+                    }
                   }}
                 >
                   <div className="w-full aspect-square flex items-center justify-center">
