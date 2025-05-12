@@ -30,8 +30,12 @@ class Block extends Component {
   };
 
   handleChange = (e) => {
-    if (isNaN(e.target.value)) return;
-    this.setState({ inputValue: parseInt(e.target.value) || 0 });
+    const value = e.target.value;
+
+    // Allow empty values and negative numbers
+    if (value === "" || /^-?\d*$/.test(value)) {
+      this.setState({ inputValue: value });
+    }
   };
 
   handleGotoChange = (coord, value) => {
@@ -163,7 +167,7 @@ class Block extends Component {
 }
 
 export default DragSource(
-  'BLOCK', // Ensure this matches the drop target type
+  "BLOCK", // Ensure this matches the drop target type
   blockSource,
   (connect, monitor) => ({
     connectDragSource: connect.dragSource(),

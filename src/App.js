@@ -19,6 +19,7 @@ export default function App() {
       message: "",
       run: false,
       thinking: false,
+      executionToken:0
     },
   ]);
 
